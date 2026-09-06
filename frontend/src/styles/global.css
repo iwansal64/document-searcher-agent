@@ -1,0 +1,20 @@
+@layer base, tailwindcss;
+
+@import "tailwindcss" layer(tailwindcss);
+
+@layer base {
+        * {
+                margin: 0;
+                padding: 0;
+        }
+        
+        body {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                overflow: hidden;
+                background-color: #050509;
+        }
+}
