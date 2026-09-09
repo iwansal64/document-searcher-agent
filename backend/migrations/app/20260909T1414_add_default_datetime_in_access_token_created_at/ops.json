@@ -1,0 +1,44 @@
+[
+  {
+    "id": "setDefault.accessToken.created_at",
+    "label": "Set default on \"accessToken\".\"created_at\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "created_at",
+        "table": "accessToken"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"created_at\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "accessToken",
+          "created_at"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "set default on \"created_at\"",
+        "sql": "ALTER TABLE \"public\".\"accessToken\" ALTER COLUMN \"created_at\" SET DEFAULT (now())"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"created_at\" has a default",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"column_default\" IS NOT NULL)) AS \"result\"",
+        "params": [
+          "public",
+          "accessToken",
+          "created_at"
+        ]
+      }
+    ]
+  }
+]
