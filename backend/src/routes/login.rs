@@ -6,19 +6,13 @@ use std::{
 use actix_web::{HttpResponse, Responder, post, web};
 use cookie::{Cookie, time::Duration};
 use rand::RngExt;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
-use crate::{AppState, utils::error_officer};
+use crate::{AppState, routes::ResponseData, utils::error_officer};
 
 #[derive(Deserialize)]
 struct LoginRequestData {
         password: String,
-}
-
-#[derive(Serialize)]
-struct LoginResponseData {
-        success: bool,
-        message: String,
 }
 
 #[post("/login")]
@@ -29,7 +23,7 @@ async fn login(payload: web::Json<LoginRequestData>, state: web::Data<AppState>)
                 Ok(password) => password,
                 Err(_) => {
                         error_officer::error_env("AUTHENTICATION_PASSWORD");
-                        return HttpResponse::InternalServerError().json(LoginResponseData {
+                        return HttpResponse::InternalServerError().json(ResponseData {
                                 success: false,
                                 message: String::from("There's an error with server"),
                         });
@@ -37,7 +31,7 @@ async fn login(payload: web::Json<LoginRequestData>, state: web::Data<AppState>)
         };
 
         if payload.password != correct_password {
-                return HttpResponse::Unauthorized().json(LoginResponseData {
+                return HttpResponse::Unauthorized().json(ResponseData {
                         success: false,
                         message: String::from("Unauthorized"),
                 });
@@ -49,7 +43,7 @@ async fn login(payload: web::Json<LoginRequestData>, state: web::Data<AppState>)
                 Ok(length) => length,
                 Err(_) => {
                         error_officer::error_env("SESSION_TOKEN_LENGTH");
-                        return HttpResponse::InternalServerError().json(LoginResponseData {
+                        return HttpResponse::InternalServerError().json(ResponseData {
                                 success: false,
                                 message: String::from("There's an error with server"),
                         });
@@ -61,7 +55,7 @@ async fn login(payload: web::Json<LoginRequestData>, state: web::Data<AppState>)
                 Ok(token_length) => token_length,
                 Err(_) => {
                         error_officer::error_parse("token_length");
-                        return HttpResponse::InternalServerError().json(LoginResponseData {
+                        return HttpResponse::InternalServerError().json(ResponseData {
                                 success: false,
                                 message: String::from("There's an error with server"),
                         });
@@ -104,7 +98,7 @@ async fn login(payload: web::Json<LoginRequestData>, state: web::Data<AppState>)
                 .finish();
 
         // ? Return OK response
-        HttpResponse::Ok().cookie(cookie).json(LoginResponseData {
+        HttpResponse::Ok().cookie(cookie).json(ResponseData {
                 success: true,
                 message: String::from("Successfully login!"),
         })

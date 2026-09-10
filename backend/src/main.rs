@@ -2,12 +2,20 @@ pub mod db;
 pub mod routes;
 pub mod utils;
 
+use std::{
+        env::{self, VarError},
+        process::exit,
+};
+
 use actix_web::{App, HttpResponse, HttpServer, Responder, post, web};
 use sqlx::{PgPool, postgres::PgPoolOptions};
 use tracing_actix_web::TracingLogger;
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 
-use crate::routes::login::login;
+use crate::{
+        routes::{login::login, reset::reset},
+        utils::error_officer,
+};
 
 #[derive(Clone)]
 pub struct AppState {
@@ -44,11 +52,22 @@ async fn main() -> std::io::Result<()> {
         // Start the HTTP server
         HttpServer::new(move || {
                 let app_state: AppState = AppState { db: pool.clone() };
+
+                let reset_endpoint: Result<String, VarError> = env::var("RESET_ENDPOINT");
+                let reset_endpoint: String = match reset_endpoint {
+                        Ok(var) => var,
+                        Err(_) => {
+                                error_officer::error_env("RESET_ENDPOINT");
+                                exit(1);
+                        }
+                };
+
                 App::new()
                         .wrap(TracingLogger::default())
                         .app_data(web::Data::new(app_state.clone()))
                         .service(hello)
                         .service(login)
+                        .route(&reset_endpoint, web::post().to(reset))
         })
         .bind(("127.0.0.1", 8080))?
         .run()
