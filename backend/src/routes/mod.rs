@@ -1,10 +1,11 @@
 use serde::Serialize;
 
 pub mod login;
+pub mod middleware;
 pub mod reset;
 
 #[derive(Serialize)]
-struct ResponseData {
-        success: bool,
-        message: String,
+pub struct ResponseData {
+        pub success: bool,
+        pub message: String,
 }

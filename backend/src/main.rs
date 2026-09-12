@@ -7,13 +7,13 @@ use std::{
         process::exit,
 };
 
-use actix_web::{App, HttpResponse, HttpServer, Responder, post, web};
+use actix_web::{App, HttpResponse, HttpServer, Responder, middleware::from_fn, post, web};
 use sqlx::{PgPool, postgres::PgPoolOptions};
 use tracing_actix_web::TracingLogger;
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 
 use crate::{
-        routes::{login::login, reset::reset},
+        routes::{login::login, middleware::routes_lock, reset::reset},
         utils::error_officer,
 };
 
@@ -64,6 +64,7 @@ async fn main() -> std::io::Result<()> {
 
                 App::new()
                         .wrap(TracingLogger::default())
+                        .wrap(from_fn(routes_lock))
                         .app_data(web::Data::new(app_state.clone()))
                         .service(hello)
                         .service(login)
