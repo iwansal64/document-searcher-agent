@@ -5,6 +5,7 @@ pub mod utils;
 use std::{
         env::{self, VarError},
         process::exit,
+        time::Duration,
 };
 
 use actix_web::{App, HttpResponse, HttpServer, Responder, middleware::from_fn, post, web};
@@ -66,10 +67,17 @@ async fn main() -> std::io::Result<()> {
                         .wrap(TracingLogger::default())
                         .wrap(from_fn(routes_lock))
                         .app_data(web::Data::new(app_state.clone()))
+                        .app_data(web::PayloadConfig::new(1 << 20))
                         .service(hello)
                         .service(login)
                         .route(&reset_endpoint, web::post().to(reset))
         })
+        .client_request_timeout(Duration::from_secs(3))
+        .client_disconnect_timeout(Duration::from_secs(1))
+        .keep_alive(Duration::from_secs(3))
+        .backlog(100)
+        .max_connections(100)
+        .max_connection_rate(256)
         .bind(("127.0.0.1", 8080))?
         .run()
         .await
