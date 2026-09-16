@@ -1,3 +1,4 @@
+pub mod ai;
 pub mod db;
 pub mod routes;
 pub mod utils;
@@ -14,13 +15,15 @@ use tracing_actix_web::TracingLogger;
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 
 use crate::{
-        routes::{login::login, middleware::routes_lock, reset::reset},
+        ai::ai_manager::{AIModel, create_ai},
+        routes::{chat::chat, login::login, middleware::routes_lock, reset::reset},
         utils::error_officer,
 };
 
 #[derive(Clone)]
 pub struct AppState {
         db: PgPool,
+        ai_model: AIModel,
 }
 
 #[post("/")]
@@ -44,15 +47,21 @@ async fn main() -> std::io::Result<()> {
                 .init();
 
         // Initialize PostgreSQL connection
-        let pool = PgPoolOptions::new()
+        let pool: sqlx::Pool<sqlx::Postgres> = PgPoolOptions::new()
                 .max_connections(5)
                 .connect(&database_url)
                 .await
                 .expect("Failed to create pool");
 
+        // Initialize agent
+        let agent: AIModel = create_ai().await.unwrap();
+
         // Start the HTTP server
         HttpServer::new(move || {
-                let app_state: AppState = AppState { db: pool.clone() };
+                let app_state: AppState = AppState {
+                        db: pool.clone(),
+                        ai_model: agent.clone(),
+                };
 
                 let reset_endpoint: Result<String, VarError> = env::var("RESET_ENDPOINT");
                 let reset_endpoint: String = match reset_endpoint {
@@ -70,6 +79,7 @@ async fn main() -> std::io::Result<()> {
                         .app_data(web::PayloadConfig::new(1 << 20))
                         .service(hello)
                         .service(login)
+                        .service(chat)
                         .route(&reset_endpoint, web::post().to(reset))
         })
         .client_request_timeout(Duration::from_secs(3))

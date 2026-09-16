@@ -34,7 +34,7 @@ pub async fn routes_lock(
 
         // ? Check if the current URL not in protected endpoints
         if !unprotected_endpoints.contains(&req.uri().to_string().as_str()) {
-                let access_token_cookie = req.cookie("access_token").map(|data| data.to_string());
+                let access_token_cookie = req.cookie("access_token");
                 let access_token_cookie = match access_token_cookie {
                         Some(data) => data,
                         None => {
@@ -48,7 +48,7 @@ pub async fn routes_lock(
                 let access_token_db: Result<Option<AccessToken>, sqlx::Error> = sqlx::query_as!(
                         AccessToken,
                         r#"SELECT * FROM "accessToken" WHERE token=$1"#,
-                        access_token_cookie
+                        access_token_cookie.value()
                 )
                 .fetch_optional(&state.db)
                 .await;

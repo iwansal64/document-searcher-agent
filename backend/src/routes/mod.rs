@@ -1,5 +1,6 @@
 use serde::Serialize;
 
+pub mod chat;
 pub mod login;
 pub mod middleware;
 pub mod reset;
